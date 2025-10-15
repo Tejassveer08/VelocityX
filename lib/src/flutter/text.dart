@@ -17,6 +17,7 @@ import 'package:velocity_x/src/extensions/context_ext.dart';
 import 'package:velocity_x/src/extensions/string_ext.dart';
 import 'package:velocity_x/src/flutter/velocityx_mixins/render_mixin.dart';
 import 'package:velocity_x/src/velocity_xx.dart';
+import 'vx_text_theme.dart';
 
 import 'builder.dart';
 import 'nothing.dart';
@@ -515,35 +516,50 @@ class VxTextBuilder extends VxWidgetBuilder<Widget>
         wordSpacing: _wordSpacing,
         shadows: _shadowBlur > 0 ? sdw : null);
 
-    final textWidget = _isIntrinsic
-        ? Text(
+    final effectiveBuilder = Builder(
+      builder: (context) {
+        final theme = VxTextTheme.of(context)?.style;
+        final merged = (theme?.merge(_themedStyle) ?? _themedStyle)
+                ?.merge(_textStyle)
+                ?.merge(ts) ??
+            _textStyle?.merge(ts) ??
+            theme?.merge(ts) ??
+            ts;
+
+        if (_isIntrinsic) {
+          return Text(
             _text!,
             key: key,
             textAlign: _textAlign,
             maxLines: _maxLines,
             textScaler:
                 _scaleFactor == null ? null : TextScaler.linear(_scaleFactor!),
-            style: _themedStyle?.merge(ts) ?? _textStyle?.merge(ts) ?? ts,
+            style: merged,
             softWrap: _softWrap ?? true,
             overflow: _overflow ?? TextOverflow.clip,
             strutStyle: _strutStyle,
-          )
-        : AutoSizeText(
-            _text!,
-            key: key,
-            textAlign: _textAlign,
-            maxLines: _maxLines,
-            textScaleFactor: _scaleFactor,
-            style: _themedStyle?.merge(ts) ?? _textStyle?.merge(ts) ?? ts,
-            softWrap: _softWrap ?? true,
-            minFontSize: _minFontSize ?? 12,
-            maxFontSize: _maxFontSize ?? double.infinity,
-            stepGranularity: _stepGranularity ?? 1,
-            overflowReplacement: _replacement,
-            overflow: _overflow ?? TextOverflow.clip,
-            strutStyle: _strutStyle,
-            wrapWords: _wrapWords ?? true,
           );
+        }
+        return AutoSizeText(
+          _text!,
+          key: key,
+          textAlign: _textAlign,
+          maxLines: _maxLines,
+          textScaleFactor: _scaleFactor,
+          style: merged,
+          softWrap: _softWrap ?? true,
+          minFontSize: _minFontSize ?? 12,
+          maxFontSize: _maxFontSize ?? double.infinity,
+          stepGranularity: _stepGranularity ?? 1,
+          overflowReplacement: _replacement,
+          overflow: _overflow ?? TextOverflow.clip,
+          strutStyle: _strutStyle,
+          wrapWords: _wrapWords ?? true,
+        );
+      },
+    );
+
+    return effectiveBuilder;
 
     return textWidget;
   }
